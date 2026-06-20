@@ -27,6 +27,7 @@ The app runs a FastAPI web server on the Raspberry Pi and communicates with the 
 - Brewing recipe list, editor, upload/import flow, and recipe start/pause/resume/stop controls.
 - Stock Brewie JSON recipe importer that converts original `instructions` arrays into internal `P103` controller steps.
 - Separate Cleaning Programs area for Short Clean, Full Clean, and Sanitizing Clean routines.
+- Optional Blink camera snapshot panel on the Progress page with a 60-second refresh interval.
 - Emergency stop path that sends valve/pump/heater shutdown commands.
 - Developer Mode terminal for raw P-command testing.
 - Stock Brewie TCP framing support (`$ packet length payload check *`) with ACK parsing.
@@ -160,6 +161,22 @@ Use the Cleaning page for maintenance programs:
 
 Each run requires confirmation. Emergency Stop remains available on the same page.
 
+### Blink Camera
+
+The Progress page can show an optional Blink camera snapshot beside the brew progress tracker. Blink does not provide a true local live video stream through `blinkpy`; this app requests a fresh cloud snapshot no faster than once every 60 seconds.
+
+Set these values in `.env` when you want the panel enabled:
+
+```env
+BLINK_ENABLED=true
+BLINK_USERNAME=your_blink_email@example.com
+BLINK_PASSWORD=your_blink_password
+BLINK_CAMERA_NAME=
+BLINK_REFRESH_SECONDS=60
+```
+
+Leave `BLINK_CAMERA_NAME` blank to use the first camera returned by Blink, or set it to the exact camera name shown in the Blink app. If Blink requests two-factor authentication, complete the Blink account verification flow before relying on the unattended Pi service.
+
 ### Recipes
 
 Upload ReBrewie-format JSON or original stock Brewie JSON recipes. Stock recipe JSON files are converted into internal controller steps and saved into `recipes/`.
@@ -173,6 +190,8 @@ Send raw P-commands directly to the controller. This mode is intended for carefu
 | Method | Endpoint | Description |
 | --- | --- | --- |
 | GET | `/api/status` | Current application and telemetry state |
+| GET | `/api/blink/status` | Blink camera configuration/cache status |
+| GET | `/api/blink/snapshot` | Cached Blink camera JPEG snapshot |
 | GET | `/api/log?n=100` | Recent in-memory event log |
 | POST | `/api/command` | Send a raw command, JSON body `{ "cmd": "P999" }` |
 | POST | `/api/control/start` | Start a brew recipe, body `{ "recipe_id": "..." }` |
@@ -210,6 +229,11 @@ Configuration is handled by environment variables, usually through `.env`.
 | `BREWIE_SERIAL_BAUD` | `115200` | Serial baud rate |
 | `LOCAL_BIND` | `0.0.0.0` | Web bind address |
 | `LOCAL_PORT` | `8080` | Web port |
+| `BLINK_ENABLED` | `false` | Enable the optional Progress page camera panel |
+| `BLINK_USERNAME` | empty | Blink account username/email |
+| `BLINK_PASSWORD` | empty | Blink account password |
+| `BLINK_CAMERA_NAME` | empty | Optional exact Blink camera name; first camera is used when blank |
+| `BLINK_REFRESH_SECONDS` | `60` | Snapshot refresh interval; values below 60 are clamped to 60 |
 | `RECIPE_DIR` | `recipes` | Recipe storage folder |
 | `DISCOVERY_ENABLED` | `true` | Enable discovery helpers |
 | `TO_LITER` | `20.0` | Default batch/session volume |
@@ -446,5 +470,4 @@ MIT License. See [LICENSE](LICENSE).
 ## Contact
 
 No contact information is provided. The author is unable to provide direct support.
-
 

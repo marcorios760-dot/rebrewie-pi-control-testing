@@ -46,6 +46,7 @@ class Settings(BaseSettings):
     blink_password: str = Field("", alias="BLINK_PASSWORD")
     blink_camera_name: str = Field("", alias="BLINK_CAMERA_NAME")
     blink_refresh_seconds: int = Field(60, alias="BLINK_REFRESH_SECONDS")
+    blink_auth_file: str = Field(".blink-auth.json", alias="BLINK_AUTH_FILE")
 
     # Recipes storage directory
     recipe_dir: str = Field("recipes", alias="RECIPE_DIR")

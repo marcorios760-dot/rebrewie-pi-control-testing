@@ -8,8 +8,10 @@ cloud API.
 from __future__ import annotations
 
 import asyncio
+import json
 import time
 from dataclasses import dataclass
+from pathlib import Path
 
 from .config import settings
 
@@ -43,6 +45,8 @@ class BlinkCameraService:
             "enabled": settings.blink_enabled,
             "configured": bool(settings.blink_username and settings.blink_password),
             "camera_name": settings.blink_camera_name or None,
+            "auth_file": settings.blink_auth_file,
+            "auth_file_exists": Path(settings.blink_auth_file).exists(),
             "refresh_seconds": self.refresh_seconds,
             "has_snapshot": self._snapshot is not None,
             "refreshed_at": self._snapshot.refreshed_at if self._snapshot else None,
@@ -63,10 +67,10 @@ class BlinkCameraService:
             try:
                 snapshot = await self._refresh_snapshot()
             except Exception as exc:  # Keep the Progress page usable on camera errors.
-                self._last_error = str(exc)
+                self._last_error = self._format_error(exc)
                 if self._snapshot:
                     return self._snapshot
-                raise BlinkCameraError(str(exc)) from exc
+                raise BlinkCameraError(self._last_error) from exc
 
             self._snapshot = snapshot
             self._last_error = None
@@ -99,21 +103,119 @@ class BlinkCameraService:
             from aiohttp import ClientSession
             from blinkpy.auth import Auth
             from blinkpy.blinkpy import Blink
+            from blinkpy.auth import BlinkTwoFARequiredError
+            import blinkpy.api as blink_api
         except ImportError as exc:
             raise BlinkCameraError("blinkpy is not installed; run pip install -r requirements.txt") from exc
 
+        self._patch_blinkpy_oauth_signin(blink_api)
         session = ClientSession()
         blink = Blink(session=session)
-        blink.auth = Auth(
-            {
-                "username": settings.blink_username,
-                "password": settings.blink_password,
-            },
-            no_prompt=True,
-        )
-        await blink.start()
+        auth_data = self._load_auth_data()
+        blink.auth = Auth(auth_data, no_prompt=True)
+        try:
+            started = await blink.start()
+        except BlinkTwoFARequiredError as exc:
+            await session.close()
+            raise BlinkCameraError(
+                "Blink requires two-factor verification. Complete verification and save "
+                f"credentials to {settings.blink_auth_file}."
+            ) from exc
+        except Exception:
+            await session.close()
+            raise
+        if not started:
+            await session.close()
+            raise BlinkCameraError("Blink login/setup failed. Check credentials, 2FA state, or Blink API logs.")
         self._blink = blink
         return blink
+
+    def _load_auth_data(self) -> dict:
+        auth_path = Path(settings.blink_auth_file)
+        if auth_path.exists():
+            try:
+                data = json.loads(auth_path.read_text())
+            except (OSError, json.JSONDecodeError) as exc:
+                raise BlinkCameraError(f"Blink auth file could not be read: {auth_path}") from exc
+            if isinstance(data, dict):
+                return data
+            raise BlinkCameraError(f"Blink auth file is not a JSON object: {auth_path}")
+
+        return {
+            "username": settings.blink_username,
+            "password": settings.blink_password,
+        }
+
+    def _patch_blinkpy_oauth_signin(self, blink_api) -> None:
+        """Patch blinkpy 0.25.6 OAuth logging bug for non-202 failures.
+
+        blinkpy 0.25.6 references ``response_text`` before assignment when
+        Blink returns statuses such as 429 rate limiting. This hides the real
+        Blink error from the UI. Keep the same success/2FA behavior, but raise a
+        useful error for rate limits and other OAuth failures.
+        """
+        if getattr(blink_api.oauth_signin, "_rebrewie_patched", False):
+            return
+
+        async def oauth_signin(auth, email, password, csrf_token):
+            headers = {
+                "User-Agent": blink_api.OAUTH_USER_AGENT,
+                "Accept": "*/*",
+                "Content-Type": "application/x-www-form-urlencoded",
+                "Origin": "https://api.oauth.blink.com",
+                "Referer": blink_api.OAUTH_SIGNIN_URL,
+            }
+            data = {
+                "username": email,
+                "password": password,
+                "csrf-token": csrf_token,
+            }
+            response = await auth.session.post(
+                blink_api.OAUTH_SIGNIN_URL, headers=headers, data=data, allow_redirects=False
+            )
+            response_text = await response.text()
+
+            if response.status == 412:
+                return "2FA_REQUIRED"
+
+            if response.status == 202:
+                try:
+                    response_json = json.loads(response_text)
+                except json.JSONDecodeError:
+                    response_json = {}
+                if (
+                    response_json.get("tsv_state")
+                    or response_json.get("tsv_methods")
+                    or response_json.get("next_time_in_secs")
+                ):
+                    return "2FA_REQUIRED"
+
+            if response.status in [301, 302, 303, 307, 308]:
+                return "SUCCESS"
+
+            try:
+                error_json = json.loads(response_text)
+            except json.JSONDecodeError:
+                error_json = {}
+            description = (
+                error_json.get("error_description")
+                or error_json.get("error")
+                or response_text[:240]
+                or "unknown Blink OAuth error"
+            )
+            wait_s = error_json.get("next_time_in_secs")
+            if wait_s:
+                description = f"{description} Try again in {wait_s} seconds."
+            raise BlinkCameraError(f"Blink OAuth sign-in failed ({response.status}): {description}")
+
+        oauth_signin._rebrewie_patched = True
+        blink_api.oauth_signin = oauth_signin
+
+    def _format_error(self, exc: Exception) -> str:
+        msg = str(exc).strip()
+        if msg:
+            return msg
+        return f"{type(exc).__module__}.{type(exc).__name__}"
 
     def _select_camera(self, cameras: dict):
         if not cameras:

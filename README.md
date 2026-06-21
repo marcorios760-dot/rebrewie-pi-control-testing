@@ -173,9 +173,10 @@ BLINK_USERNAME=your_blink_email@example.com
 BLINK_PASSWORD=your_blink_password
 BLINK_CAMERA_NAME=
 BLINK_REFRESH_SECONDS=60
+BLINK_AUTH_FILE=.blink-auth.json
 ```
 
-Leave `BLINK_CAMERA_NAME` blank to use the first camera returned by Blink, or set it to the exact camera name shown in the Blink app. If Blink requests two-factor authentication, complete the Blink account verification flow before relying on the unattended Pi service.
+Leave `BLINK_CAMERA_NAME` blank to use the first camera returned by Blink, or set it to the exact camera name shown in the Blink app. If Blink requests two-factor authentication, complete the Blink account verification flow once and save the token file named by `BLINK_AUTH_FILE` before relying on the unattended Pi service.
 
 ### Recipes
 
@@ -234,6 +235,7 @@ Configuration is handled by environment variables, usually through `.env`.
 | `BLINK_PASSWORD` | empty | Blink account password |
 | `BLINK_CAMERA_NAME` | empty | Optional exact Blink camera name; first camera is used when blank |
 | `BLINK_REFRESH_SECONDS` | `60` | Snapshot refresh interval; values below 60 are clamped to 60 |
+| `BLINK_AUTH_FILE` | `.blink-auth.json` | Saved blinkpy auth token file after 2FA verification |
 | `RECIPE_DIR` | `recipes` | Recipe storage folder |
 | `DISCOVERY_ENABLED` | `true` | Enable discovery helpers |
 | `TO_LITER` | `20.0` | Default batch/session volume |
@@ -470,4 +472,3 @@ MIT License. See [LICENSE](LICENSE).
 ## Contact
 
 No contact information is provided. The author is unable to provide direct support.
-

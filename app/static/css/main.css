@@ -346,10 +346,10 @@ textarea.field-input { resize: vertical; }
 }
 .progress-top-row {
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) 96px;
+  grid-template-columns: minmax(220px, 1fr) 200px;
   align-items: center;
   gap: 1rem;
-  max-width: 480px;
+  max-width: 640px;
   margin: 0 auto 1.5rem;
 }
 .progress-circle-wrap {
@@ -372,8 +372,8 @@ textarea.field-input { resize: vertical; }
 .ring-label { font-size: .8rem; color: var(--text-dim); text-align: center; }
 
 .camera-panel {
-  width: 96px;
-  max-width: 96px;
+  width: 200px;
+  max-width: 200px;
   justify-self: start;
 }
 .camera-panel-head {
@@ -393,10 +393,10 @@ textarea.field-input { resize: vertical; }
 }
 .camera-frame {
   position: relative;
-  width: 96px !important;
-  height: 54px !important;
-  max-width: 96px !important;
-  max-height: 54px !important;
+  width: 200px !important;
+  height: 112px !important;
+  max-width: 200px !important;
+  max-height: 112px !important;
   overflow: hidden;
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -404,10 +404,10 @@ textarea.field-input { resize: vertical; }
   box-shadow: var(--shadow);
 }
 .camera-frame img {
-  width: 96px !important;
-  height: 54px !important;
-  max-width: 96px !important;
-  max-height: 54px !important;
+  width: 200px !important;
+  height: 112px !important;
+  max-width: 200px !important;
+  max-height: 112px !important;
   object-fit: cover;
   display: block;
 }
@@ -608,15 +608,16 @@ select.sfield { padding: .32rem .6rem; }
   .card-value { font-size: 1.5rem; }
   .prep-card.wide { grid-column: span 1; }
   .progress-top-row {
-    grid-template-columns: minmax(200px, 1fr) 96px;
-    max-width: 340px;
+    grid-template-columns: 1fr;
+    max-width: 240px;
     gap: .75rem;
   }
   .progress-circle-wrap {
-    justify-self: end;
+    justify-self: center;
   }
   .camera-panel {
-    width: 96px;
-    max-width: 96px;
+    width: 200px;
+    max-width: 200px;
+    justify-self: center;
   }
 }

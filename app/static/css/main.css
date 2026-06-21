@@ -346,10 +346,10 @@ textarea.field-input { resize: vertical; }
 }
 .progress-top-row {
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) 200px;
+  grid-template-columns: minmax(220px, 1fr) 250px;
   align-items: center;
   gap: 1rem;
-  max-width: 640px;
+  max-width: 700px;
   margin: 0 auto 1.5rem;
 }
 .progress-circle-wrap {
@@ -372,8 +372,8 @@ textarea.field-input { resize: vertical; }
 .ring-label { font-size: .8rem; color: var(--text-dim); text-align: center; }
 
 .camera-panel {
-  width: 200px;
-  max-width: 200px;
+  width: 250px;
+  max-width: 250px;
   justify-self: start;
 }
 .camera-panel-head {
@@ -393,10 +393,10 @@ textarea.field-input { resize: vertical; }
 }
 .camera-frame {
   position: relative;
-  width: 200px !important;
-  height: 112px !important;
-  max-width: 200px !important;
-  max-height: 112px !important;
+  width: 250px !important;
+  height: 140.625px !important;
+  max-width: 250px !important;
+  max-height: 140.625px !important;
   overflow: hidden;
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -404,10 +404,10 @@ textarea.field-input { resize: vertical; }
   box-shadow: var(--shadow);
 }
 .camera-frame img {
-  width: 200px !important;
-  height: 112px !important;
-  max-width: 200px !important;
-  max-height: 112px !important;
+  width: 250px !important;
+  height: 140.625px !important;
+  max-width: 250px !important;
+  max-height: 140.625px !important;
   object-fit: cover;
   display: block;
 }
@@ -609,15 +609,15 @@ select.sfield { padding: .32rem .6rem; }
   .prep-card.wide { grid-column: span 1; }
   .progress-top-row {
     grid-template-columns: 1fr;
-    max-width: 240px;
+    max-width: 280px;
     gap: .75rem;
   }
   .progress-circle-wrap {
     justify-self: center;
   }
   .camera-panel {
-    width: 200px;
-    max-width: 200px;
+    width: 250px;
+    max-width: 250px;
     justify-self: center;
   }
 }

@@ -346,9 +346,9 @@ textarea.field-input { resize: vertical; }
 }
 .progress-top-row {
   display: grid;
-  grid-template-columns: minmax(260px, 1fr) minmax(72px, 80px);
+  grid-template-columns: minmax(220px, 1fr) 96px;
   align-items: center;
-  gap: 1.5rem;
+  gap: 1rem;
   max-width: 480px;
   margin: 0 auto 1.5rem;
 }
@@ -372,28 +372,29 @@ textarea.field-input { resize: vertical; }
 .ring-label { font-size: .8rem; color: var(--text-dim); text-align: center; }
 
 .camera-panel {
-  width: 100%;
-  max-width: 80px;
+  width: 96px;
+  max-width: 96px;
+  justify-self: start;
 }
 .camera-panel-head {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   gap: .75rem;
-  margin-bottom: .6rem;
+  margin-bottom: .25rem;
 }
 .camera-panel h2 {
-  font-size: .7rem;
+  font-size: .62rem;
   line-height: 1.2;
 }
 .camera-panel p {
   color: var(--text-dim);
-  font-size: .58rem;
+  display: none;
 }
 .camera-frame {
   position: relative;
-  width: 100%;
-  aspect-ratio: 16 / 10;
+  width: 96px;
+  height: 60px;
   overflow: hidden;
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -603,13 +604,15 @@ select.sfield { padding: .32rem .6rem; }
   .card-value { font-size: 1.5rem; }
   .prep-card.wide { grid-column: span 1; }
   .progress-top-row {
-    grid-template-columns: 1fr;
-    max-width: 360px;
+    grid-template-columns: minmax(200px, 1fr) 96px;
+    max-width: 340px;
+    gap: .75rem;
   }
   .progress-circle-wrap {
-    justify-self: center;
+    justify-self: end;
   }
   .camera-panel {
-    max-width: none;
+    width: 96px;
+    max-width: 96px;
   }
 }

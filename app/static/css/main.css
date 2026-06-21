@@ -346,10 +346,10 @@ textarea.field-input { resize: vertical; }
 }
 .progress-top-row {
   display: grid;
-  grid-template-columns: minmax(260px, 1fr) minmax(140px, 160px);
+  grid-template-columns: minmax(260px, 1fr) minmax(72px, 80px);
   align-items: center;
   gap: 1.5rem;
-  max-width: 560px;
+  max-width: 480px;
   margin: 0 auto 1.5rem;
 }
 .progress-circle-wrap {
@@ -373,7 +373,7 @@ textarea.field-input { resize: vertical; }
 
 .camera-panel {
   width: 100%;
-  max-width: 160px;
+  max-width: 80px;
 }
 .camera-panel-head {
   display: flex;
@@ -383,12 +383,12 @@ textarea.field-input { resize: vertical; }
   margin-bottom: .6rem;
 }
 .camera-panel h2 {
-  font-size: .85rem;
+  font-size: .7rem;
   line-height: 1.2;
 }
 .camera-panel p {
   color: var(--text-dim);
-  font-size: .68rem;
+  font-size: .58rem;
 }
 .camera-frame {
   position: relative;

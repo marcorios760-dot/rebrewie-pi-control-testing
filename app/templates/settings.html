@@ -16,6 +16,9 @@
 <section class="settings-grid">
   <div class="settings-panel">
     <h2>Registered Machine</h2>
+    <div class="setting-summary">
+      Owner account: <strong>{{ owner_registration.username }}</strong>
+    </div>
     <form method="post" action="/settings/machine">
       <label class="field-stack">
         <span>Machine label</span>

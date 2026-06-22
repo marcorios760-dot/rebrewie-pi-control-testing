@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from .config import settings
+from .registration import load_owner_registration, update_owner_machine
 
 
 def _registry_path() -> Path:
@@ -15,6 +16,13 @@ def _registry_path() -> Path:
 
 
 def load_machine_registration() -> dict[str, str]:
+    owner = load_owner_registration()
+    if owner:
+        return {
+            "machine_id": owner["machine_id"],
+            "label": owner["label"],
+        }
+
     data: dict[str, Any] = {}
     path = _registry_path()
     if path.exists():
@@ -31,6 +39,13 @@ def load_machine_registration() -> dict[str, str]:
 
 
 def save_machine_registration(machine_id: str, label: str) -> dict[str, str]:
+    owner = update_owner_machine(machine_id, label)
+    if owner:
+        return {
+            "machine_id": owner["machine_id"],
+            "label": owner["label"],
+        }
+
     clean = {
         "machine_id": machine_id.strip(),
         "label": label.strip() or "Brewie",

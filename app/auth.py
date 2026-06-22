@@ -15,9 +15,10 @@ from fastapi.responses import JSONResponse, RedirectResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from .config import settings
+from .registration import load_owner_registration
 
 SESSION_COOKIE = "rebrewie_session"
-PUBLIC_PATHS = ("/login", "/static/")
+PUBLIC_PATHS = ("/login", "/register", "/static/")
 PBKDF2_ITERATIONS = 260_000
 
 
@@ -61,10 +62,30 @@ def verify_password(password: str, stored_hash: str) -> bool:
 
 
 def _session_secret() -> bytes:
-    secret = settings.auth_session_secret
+    owner = load_owner_registration()
+    secret = owner.get("session_secret") if owner else settings.auth_session_secret
     if not secret:
-        secret = settings.auth_password_hash or "rebrewie-local-dev-session"
+        secret = (owner or {}).get("password_hash") or settings.auth_password_hash or "rebrewie-local-dev-session"
     return secret.encode("utf-8")
+
+
+def auth_required() -> bool:
+    return settings.auth_enabled or load_owner_registration() is not None
+
+
+def registration_required() -> bool:
+    if not settings.auth_allow_initial_registration:
+        return False
+    if load_owner_registration() is not None:
+        return False
+    return settings.auth_enabled and not settings.auth_password_hash
+
+
+def active_credentials() -> tuple[str, str]:
+    owner = load_owner_registration()
+    if owner:
+        return owner["username"], owner["password_hash"]
+    return settings.auth_username, settings.auth_password_hash
 
 
 def create_session_token(username: str) -> str:
@@ -92,13 +113,14 @@ def read_session_token(token: str | None) -> str | None:
 
 
 def check_login(username: str, password: str) -> LoginResult:
-    if not settings.auth_enabled:
+    if not auth_required():
         return LoginResult(False, "Login is not enabled.")
-    if not settings.auth_password_hash:
-        return LoginResult(False, "AUTH_PASSWORD_HASH is not configured.")
-    if not hmac.compare_digest(username, settings.auth_username):
+    active_username, password_hash = active_credentials()
+    if not password_hash:
+        return LoginResult(False, "Register the owner account before logging in.")
+    if not hmac.compare_digest(username, active_username):
         return LoginResult(False, "Invalid username or password.")
-    if not verify_password(password, settings.auth_password_hash):
+    if not verify_password(password, password_hash):
         return LoginResult(False, "Invalid username or password.")
     return LoginResult(True)
 
@@ -120,8 +142,8 @@ def clear_session_cookie(response) -> None:
 
 
 def current_user(request: Request) -> str | None:
-    if not settings.auth_enabled:
-        return settings.auth_username
+    if not auth_required():
+        return active_credentials()[0]
     return read_session_token(request.cookies.get(SESSION_COOKIE))
 
 
@@ -133,8 +155,13 @@ def _wants_html(request: Request) -> bool:
 class AuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         path = request.url.path
-        if not settings.auth_enabled or path.startswith(PUBLIC_PATHS):
+        if not auth_required() or path.startswith(PUBLIC_PATHS):
             return await call_next(request)
+
+        if registration_required():
+            if _wants_html(request):
+                return RedirectResponse("/register", status_code=303)
+            return JSONResponse({"detail": "Owner registration required"}, status_code=403)
 
         user = current_user(request)
         if user:

@@ -220,21 +220,29 @@ Before exposing the app through any public hostname, enable app login in `.env`:
 
 ```env
 AUTH_ENABLED=true
-AUTH_USERNAME=your-user-name
-AUTH_PASSWORD_HASH=pbkdf2_sha256$...
-AUTH_SESSION_SECRET=long-random-secret
+AUTH_ALLOW_INITIAL_REGISTRATION=true
 REMOTE_PUBLIC_HOSTNAME=rebrewie-pi.commogrunt.com
 MACHINE_ID=HN0251807090304
 ```
 
-Generate the password hash and session secret from the project directory:
+On first visit, the app redirects to `/register` when no owner account exists yet. That registration screen creates the owner username/password and binds the account to the Brewie machine ID/serial number. The registration is stored locally in `owner-registration.json`, which should stay private and should not be committed to GitHub.
+
+For unattended installs, you can still pre-seed the owner login with environment variables instead of using `/register`:
+
+```env
+AUTH_USERNAME=your-user-name
+AUTH_PASSWORD_HASH=pbkdf2_sha256$...
+AUTH_SESSION_SECRET=long-random-secret
+```
+
+Generate the optional pre-seeded password hash and session secret from the project directory:
 
 ```bash
 python -c "from app.auth import hash_password; print(hash_password('your-password'))"
 python -c "import secrets; print(secrets.token_urlsafe(32))"
 ```
 
-The login cookie is HTTP-only and signed. Keep `.env` private and never commit the password hash, session secret, Cloudflare Tunnel token, Blink password, or Blink auth token. The Settings page shows the registered machine and lets you update the machine label or serial number without editing files manually.
+The login cookie is HTTP-only and signed. Keep `.env`, `owner-registration.json`, Cloudflare Tunnel tokens, Blink passwords, and Blink auth tokens private. The Settings page shows the registered owner and machine, and lets you update the machine label or serial number without editing files manually.
 
 ### Recipes
 
@@ -294,6 +302,8 @@ Configuration is handled by environment variables, usually through `.env`.
 | `AUTH_SESSION_SECRET` | empty | Secret used to sign login cookies |
 | `AUTH_SESSION_HOURS` | `12` | Login session duration |
 | `AUTH_COOKIE_SECURE` | `false` | Set `true` for HTTPS-only remote access |
+| `AUTH_ALLOW_INITIAL_REGISTRATION` | `true` | Allow `/register` to create the first owner account when no login exists |
+| `AUTH_REGISTRATION_FILE` | `owner-registration.json` | Private owner account and machine binding file |
 | `REMOTE_PUBLIC_HOSTNAME` | empty | Hostname that should show the remote connection indicator |
 | `MACHINE_ID` | `HN0251807090304` | Default registered Brewie machine ID/serial |
 | `MACHINE_REGISTRY_FILE` | `machine-registration.json` | Writable machine registration file |

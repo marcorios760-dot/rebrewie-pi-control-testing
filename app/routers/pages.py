@@ -8,8 +8,9 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from pathlib import Path
 
-from ..auth import check_login, clear_session_cookie, current_user, set_session_cookie
+from ..auth import check_login, clear_session_cookie, current_user, hash_password, registration_required, set_session_cookie
 from ..machine_registry import load_machine_registration, save_machine_registration
+from ..registration import create_owner_registration, has_owner_registration, registration_summary
 from ..state import brew_state
 from ..recipes import list_cleaning_programs, list_recipes
 from ..config import settings, COMMAND_MAP
@@ -34,6 +35,7 @@ def _context(request: Request, **extra):
         "remote_connected": _is_remote_request(request),
         "remote_hostname": settings.remote_public_hostname or request.headers.get("x-forwarded-host", ""),
         "machine_registration": load_machine_registration(),
+        "owner_registration": registration_summary(),
         "current_user": current_user(request),
         "auth_enabled": settings.auth_enabled,
     }
@@ -43,6 +45,8 @@ def _context(request: Request, **extra):
 
 @router.get("/login", response_class=HTMLResponse)
 async def page_login(request: Request, next: str = "/"):
+    if registration_required():
+        return RedirectResponse("/register", status_code=303)
     if settings.auth_enabled and current_user(request):
         return RedirectResponse(next or "/", status_code=303)
     return templates.TemplateResponse(
@@ -68,6 +72,58 @@ async def login(
 
     response = RedirectResponse(next or "/", status_code=303)
     set_session_cookie(response, username)
+    return response
+
+
+@router.get("/register", response_class=HTMLResponse)
+async def page_register(request: Request):
+    if has_owner_registration() or (settings.auth_password_hash and settings.auth_enabled):
+        return RedirectResponse("/login", status_code=303)
+    return templates.TemplateResponse(
+        "register.html",
+        _context(request, error=""),
+    )
+
+
+@router.post("/register", response_class=HTMLResponse)
+async def register(
+    request: Request,
+    username: str = Form(...),
+    password: str = Form(...),
+    password_confirm: str = Form(...),
+    machine_id: str = Form(...),
+    label: str = Form("Brewie"),
+):
+    if has_owner_registration() or (settings.auth_password_hash and settings.auth_enabled):
+        return RedirectResponse("/login", status_code=303)
+    username = username.strip()
+    machine_id = machine_id.strip()
+    if len(username) < 3:
+        error = "Username must be at least 3 characters."
+    elif len(password) < 10:
+        error = "Password must be at least 10 characters."
+    elif password != password_confirm:
+        error = "Passwords do not match."
+    elif not machine_id:
+        error = "Machine ID / Serial # is required."
+    else:
+        error = ""
+
+    if error:
+        return templates.TemplateResponse(
+            "register.html",
+            _context(request, error=error),
+            status_code=400,
+        )
+
+    owner = create_owner_registration(
+        username=username,
+        password_hash=hash_password(password),
+        machine_id=machine_id,
+        label=label,
+    )
+    response = RedirectResponse("/", status_code=303)
+    set_session_cookie(response, owner["username"])
     return response
 
 

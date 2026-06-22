@@ -14,6 +14,8 @@ from typing import Set
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
+from ..auth import current_user
+from ..config import settings
 from ..state import brew_state
 from ..parser import refresh_state_from_last_raw
 from ..transports import TransportError
@@ -29,6 +31,10 @@ _clients: Set[WebSocket] = set()
 
 @router.websocket("/ws")
 async def websocket_endpoint(ws: WebSocket) -> None:
+    if settings.auth_enabled and not current_user(ws):
+        await ws.close(code=1008)
+        return
+
     await ws.accept()
     _clients.add(ws)
     transport = getattr(ws.app.state, "transport", None)
